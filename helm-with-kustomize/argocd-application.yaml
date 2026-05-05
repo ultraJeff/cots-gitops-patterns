@@ -1,0 +1,40 @@
+# Approach 1: Multi-source ArgoCD Application
+# Helm chart is the primary source, Kustomize overlays are applied on top
+#
+# ArgoCD renders the Helm chart first, then feeds the output through
+# the Kustomize overlay before applying to the cluster.
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cots-app
+  namespace: openshift-gitops
+spec:
+  project: default
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cots-app
+
+  sources:
+    # Source 1: The Helm chart from the vendor's chart repo
+    - repoURL: https://charts.example.com
+      chart: cots-app
+      targetRevision: 1.2.3
+      helm:
+        releaseName: cots-app
+        valueFiles:
+          # Reference a values file from the second source (Git repo)
+          - $repo/base/values-ocp.yaml
+
+    # Source 2: Your Git repo with Kustomize overlays
+    - repoURL: https://github.com/your-org/cots-app-config.git
+      targetRevision: main
+      ref: repo  # This is referenced as $repo in the Helm valueFiles above
+      path: overlays/ocp
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

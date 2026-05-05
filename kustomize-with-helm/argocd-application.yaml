@@ -1,0 +1,25 @@
+# Approach 2: Simple single-source ArgoCD Application
+# ArgoCD treats this as a Kustomize app — Kustomize handles the Helm rendering
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cots-app
+  namespace: openshift-gitops
+spec:
+  project: default
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cots-app
+
+  source:
+    repoURL: https://github.com/your-org/cots-app-config.git
+    targetRevision: main
+    path: .  # Points at the directory containing kustomization.yaml
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

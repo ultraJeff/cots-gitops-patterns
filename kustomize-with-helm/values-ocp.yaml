@@ -1,0 +1,13 @@
+# Helm values overrides for deploying a COTS app on OpenShift
+# Referenced by the helmCharts field in kustomization.yaml
+
+replicaCount: 1
+
+podSecurityContext:
+  runAsNonRoot: true
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL

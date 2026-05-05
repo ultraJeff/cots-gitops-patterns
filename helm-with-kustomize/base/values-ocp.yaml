@@ -1,0 +1,16 @@
+# Helm values overrides for deploying a COTS app on OpenShift
+# These are settings the chart exposes natively via values.yaml
+
+# Use whatever the chart provides for image pull, resources, etc.
+replicaCount: 1
+
+# If the chart exposes securityContext settings, set them here first
+# before resorting to Kustomize patches
+podSecurityContext:
+  runAsNonRoot: true
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL

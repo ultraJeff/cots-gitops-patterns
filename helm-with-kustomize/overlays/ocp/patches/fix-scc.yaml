@@ -1,0 +1,21 @@
+# Strategic merge patch — targets the cots-app-api Deployment
+# Fixes the securityContext so it passes OpenShift SCC admission
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cots-app-api
+spec:
+  template:
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: cots-app-api
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL

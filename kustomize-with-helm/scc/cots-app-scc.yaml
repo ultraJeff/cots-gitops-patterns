@@ -1,0 +1,50 @@
+# Custom SCC for a COTS application
+# Grants the permissions the app needs without using privileged or anyuid
+# Adjust based on what the application actually requires
+
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: cots-app-scc
+  annotations:
+    kubernetes.io/description: >-
+      Custom SCC for a COTS application.
+      Allows running as any UID since COTS containers
+      often expect specific UIDs that don't match OpenShift's
+      assigned UID ranges.
+
+# Allow the container to run as any user
+# (COTS apps may hardcode UIDs in their images)
+runAsUser:
+  type: RunAsAny
+
+# Allow any supplemental groups
+fsGroup:
+  type: RunAsAny
+
+supplementalGroups:
+  type: RunAsAny
+
+# Keep these restrictive unless the app specifically needs them
+allowPrivilegedContainer: false
+allowPrivilegeEscalation: false
+allowHostDirVolumePlugin: false
+allowHostNetwork: false
+allowHostPorts: false
+allowHostPID: false
+allowHostIPC: false
+
+# Standard volume types
+volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - persistentVolumeClaim
+  - projected
+  - secret
+
+requiredDropCapabilities:
+  - ALL
+
+seccompProfiles:
+  - runtime/default

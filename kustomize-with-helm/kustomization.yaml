@@ -1,0 +1,85 @@
+# Approach 2: Kustomize is the primary tool
+# It pulls in the Helm chart, renders it, and patches the output
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: cots-app
+
+# Pull in the Helm chart as a Kustomize base
+# Kustomize will render this with `helm template` internally
+helmCharts:
+  - name: cots-app
+    repo: https://charts.example.com
+    version: 1.2.3
+    releaseName: cots-app
+    namespace: cots-app
+    valuesFile: values-ocp.yaml
+
+# Include the SCC resources alongside the Helm-rendered manifests
+resources:
+  - scc/cots-app-scc.yaml
+  - scc/scc-rolebinding.yaml
+
+# Patches applied to the Helm-rendered output
+patches:
+  # Fix securityContext on the API deployment
+  - target:
+      kind: Deployment
+      name: cots-app-api
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: cots-app-api
+      spec:
+        template:
+          spec:
+            securityContext:
+              runAsNonRoot: true
+              seccompProfile:
+                type: RuntimeDefault
+            containers:
+              - name: cots-app-api
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  runAsNonRoot: true
+                  capabilities:
+                    drop:
+                      - ALL
+
+  # Fix securityContext on the worker deployment
+  - target:
+      kind: Deployment
+      name: cots-app-worker
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: cots-app-worker
+      spec:
+        template:
+          spec:
+            securityContext:
+              runAsNonRoot: true
+              seccompProfile:
+                type: RuntimeDefault
+            containers:
+              - name: cots-app-worker
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  runAsNonRoot: true
+                  capabilities:
+                    drop:
+                      - ALL
+
+  # Set runAsNonRoot on any remaining deployments
+  - target:
+      kind: Deployment
+    patch: |
+      - op: add
+        path: /spec/template/spec/securityContext/runAsNonRoot
+        value: true
+
+commonLabels:
+  app.kubernetes.io/part-of: cots-app
